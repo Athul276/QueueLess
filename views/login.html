@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — QueueLess Digital Queue Management</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header class="navbar">
+    <a href="/" class="nav-brand">
+      <div class="brand-icon">Q</div>
+      <div class="brand-name">Queue<span>Less</span></div>
+    </a>
+    <div class="nav-links" id="navUserContainer">
+      <a href="/login" class="btn btn-sm btn-outline">Login</a>
+      <a href="/register" class="btn btn-sm btn-primary">
+        <span>Register</span>
+        <span class="pill-arrow">→</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Login Form Wrapper -->
+  <main class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1 class="auth-title">Welcome Back</h1>
+        <p class="auth-subtitle">Sign in to manage your queue tokens</p>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label" for="loginEmail">Email Address</label>
+          <input type="email" id="loginEmail" class="form-input" placeholder="e.g. athul@example.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" id="submitLoginBtn" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+          <span>Sign In</span>
+          <span class="pill-arrow">→</span>
+        </button>
+      </form>
+
+      <!-- Quick Demo Credentials for Reviewers -->
+      <div class="demo-credentials-box">
+        <div class="demo-credentials-title">⚡ Quick 1-Click Demo Logins:</div>
+        <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.5rem;">
+          Click below to auto-fill pre-seeded credentials:
+        </p>
+        <div class="demo-btn-group">
+          <button type="button" class="btn btn-sm btn-dark" onclick="fillAndLogin('admin@queueless.com', 'admin123')">
+            Admin (Full Access)
+          </button>
+          <button type="button" class="btn btn-sm btn-secondary" onclick="fillAndLogin('athul@example.com', 'user123')">
+            User (Athul)
+          </button>
+        </div>
+      </div>
+
+      <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
+        Don't have an account yet? <a href="/register" style="color: var(--primary); font-weight: 700; text-decoration: none;">Create an account</a>
+      </p>
+    </div>
+  </main>
+
+  <script src="/js/auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // If already logged in, redirect
+      if (Auth.isLoggedIn()) {
+        const user = Auth.getUser();
+        window.location.href = user && user.role === 'admin' ? '/admin-dashboard' : '/user-dashboard';
+      }
+      Auth.setupNavbar();
+
+      const form = document.getElementById('loginForm');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        await executeLogin(email, password);
+      });
+    });
+
+    async function fillAndLogin(email, pass) {
+      document.getElementById('loginEmail').value = email;
+      document.getElementById('loginPassword').value = pass;
+      await executeLogin(email, pass);
+    }
+
+    async function executeLogin(email, password) {
+      const btn = document.getElementById('submitLoginBtn');
+      btn.disabled = true;
+      btn.innerHTML = `<span>Signing in...</span>`;
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          Auth.setSession(data.token, data.user);
+          Auth.showToast(data.message || 'Logged in successfully!', 'success');
+          setTimeout(() => {
+            if (data.user.role === 'admin') {
+              window.location.href = '/admin-dashboard';
+            } else {
+              window.location.href = '/user-dashboard';
+            }
+          }, 600);
+        } else {
+          Auth.showToast(data.message || 'Login failed', 'error');
+          btn.disabled = false;
+          btn.innerHTML = `<span>Sign In</span> <span class="pill-arrow">→</span>`;
+        }
+      } catch (err) {
+        Auth.showToast(err.message || 'Network error', 'error');
+        btn.disabled = false;
+        btn.innerHTML = `<span>Sign In</span> <span class="pill-arrow">→</span>`;
+      }
+    }
+  </script>
+</body>
+</html>

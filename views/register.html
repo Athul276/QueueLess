@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register — QueueLess Digital Queue Management</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header class="navbar">
+    <a href="/" class="nav-brand">
+      <div class="brand-icon">Q</div>
+      <div class="brand-name">Queue<span>Less</span></div>
+    </a>
+    <div class="nav-links" id="navUserContainer">
+      <a href="/login" class="btn btn-sm btn-outline">Login</a>
+      <a href="/register" class="btn btn-sm btn-primary">
+        <span>Register</span>
+        <span class="pill-arrow">→</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Register Form Wrapper -->
+  <main class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1 class="auth-title">Create Account</h1>
+        <p class="auth-subtitle">Join QueueLess to bypass physical waiting lines</p>
+      </div>
+
+      <form id="registerForm">
+        <div class="form-group">
+          <label class="form-label" for="regName">Full Name</label>
+          <input type="text" id="regName" class="form-input" placeholder="e.g. Athul M" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="regEmail">Email Address</label>
+          <input type="email" id="regEmail" class="form-input" placeholder="e.g. athul@example.com" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="regPassword">Password</label>
+            <input type="password" id="regPassword" class="form-input" placeholder="Min 6 chars" required minlength="6">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="regConfirmPassword">Confirm Password</label>
+            <input type="password" id="regConfirmPassword" class="form-input" placeholder="Repeat password" required minlength="6">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="regRole">Account Type</label>
+          <select id="regRole" class="form-select">
+            <option value="user" selected>Student / General User</option>
+            <option value="admin">Administrator (Desk Manager)</option>
+          </select>
+        </div>
+
+        <button type="submit" id="submitRegBtn" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+          <span>Complete Registration</span>
+          <span class="pill-arrow">→</span>
+        </button>
+      </form>
+
+      <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
+        Already have an account? <a href="/login" style="color: var(--primary); font-weight: 700; text-decoration: none;">Sign in here</a>
+      </p>
+    </div>
+  </main>
+
+  <script src="/js/auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (Auth.isLoggedIn()) {
+        const user = Auth.getUser();
+        window.location.href = user && user.role === 'admin' ? '/admin-dashboard' : '/user-dashboard';
+      }
+      Auth.setupNavbar();
+
+      const form = document.getElementById('registerForm');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('regName').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const password = document.getElementById('regPassword').value;
+        const confirmPassword = document.getElementById('regConfirmPassword').value;
+        const role = document.getElementById('regRole').value;
+
+        if (password !== confirmPassword) {
+          Auth.showToast('Passwords do not match', 'error');
+          return;
+        }
+
+        const btn = document.getElementById('submitRegBtn');
+        btn.disabled = true;
+        btn.innerHTML = `<span>Creating account...</span>`;
+
+        try {
+          const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password, confirmPassword, role }),
+          });
+
+          const data = await res.json();
+
+          if (data.success) {
+            Auth.setSession(data.token, data.user);
+            Auth.showToast('Account created successfully!', 'success');
+            setTimeout(() => {
+              window.location.href = data.user.role === 'admin' ? '/admin-dashboard' : '/user-dashboard';
+            }, 600);
+          } else {
+            Auth.showToast(data.message || 'Registration failed', 'error');
+            btn.disabled = false;
+            btn.innerHTML = `<span>Complete Registration</span> <span class="pill-arrow">→</span>`;
+          }
+        } catch (err) {
+          Auth.showToast(err.message || 'Network error', 'error');
+          btn.disabled = false;
+          btn.innerHTML = `<span>Complete Registration</span> <span class="pill-arrow">→</span>`;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Dashboard — QueueLess</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header class="navbar">
+    <a href="/" class="nav-brand">
+      <div class="brand-icon">Q</div>
+      <div class="brand-name">Queue<span>Less</span></div>
+    </a>
+    <div class="nav-links" id="navUserContainer">
+      <!-- Populated dynamically by auth.js -->
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Header Greeting -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Welcome, <span id="welcomeUserName" style="color: var(--primary);">Student</span> 👋</h1>
+        <p class="page-subtitle">Select a service department to generate your digital token, track your live queue position and wait time in real-time.</p>
+      </div>
+      <div>
+        <a href="/display" target="_blank" class="btn btn-outline">
+          <span>📺 Hall Display Screen</span>
+          <span class="pill-arrow">↗</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="dashboard-grid">
+      <!-- Left Column: Services & History -->
+      <div>
+        <!-- Services Section -->
+        <section id="servicesSection" class="card" style="margin-bottom: 2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+            <div>
+              <h2 style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 800;">1. Select Department Service</h2>
+              <p style="color: var(--text-muted); font-size: 0.9rem;">Choose the department you wish to visit</p>
+            </div>
+            <button id="generateTokenBtn" onclick="handleGenerateToken()" class="btn btn-primary" disabled>
+              <span>Get Token</span>
+              <span class="pill-arrow">→</span>
+            </button>
+          </div>
+
+          <!-- Dynamic Services Grid -->
+          <div id="servicesList" class="services-grid">
+            <p class="text-muted">Loading department services...</p>
+          </div>
+        </section>
+
+        <!-- Queue History Section -->
+        <section class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+            <div>
+              <h2 style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 800;">My Queue History</h2>
+              <p style="color: var(--text-muted); font-size: 0.9rem;">Previous queue tokens and service records</p>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Token</th>
+                  <th>Service</th>
+                  <th>Counter</th>
+                  <th>Date & Time</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody">
+                <!-- Dynamically loaded -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- Right Column: Active Digital Token & Live Queue Ladder -->
+      <div>
+        <!-- Active Token Pass -->
+        <div id="activeTokenSection" style="margin-bottom: 2rem;">
+          <!-- Dynamically loaded ticket or empty state -->
+        </div>
+
+        <!-- Live Queue Ladder -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <h3 style="font-family: var(--font-display); font-size: 1.15rem; font-weight: 800;">Live Queue Ladder</h3>
+            <span class="badge badge-waiting" style="font-size: 0.7rem;">⚡ Live Sync</span>
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">Tokens currently in line for your selected service</p>
+
+          <div id="liveQueueTracker">
+            <p class="text-muted" style="text-align: center; padding: 1.5rem 0;">No active queue selected.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/userDashboard.js"></script>
+</body>
+</html>

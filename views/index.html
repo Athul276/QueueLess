@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QueueLess — Smart Digital Queue & Token Management</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .hero-section {
+      background: linear-gradient(135deg, #FF6636 0%, #E85025 50%, #C93913 100%);
+      color: white;
+      border-radius: var(--radius-xl);
+      padding: 4rem 3rem;
+      margin: 1.5rem auto 3rem;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 3rem;
+      align-items: center;
+      box-shadow: 0 25px 50px rgba(232, 80, 37, 0.28);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: 3.8rem;
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -1.5px;
+      margin-bottom: 1.25rem;
+    }
+    .hero-subtitle {
+      font-size: 1.15rem;
+      line-height: 1.6;
+      opacity: 0.92;
+      margin-bottom: 2rem;
+      max-width: 520px;
+    }
+    .hero-btn-group {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .hero-preview-card {
+      background: white;
+      color: var(--dark);
+      border-radius: var(--radius-xl);
+      padding: 2.2rem;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.22);
+      transform: rotate(1deg);
+      transition: var(--transition);
+    }
+    .hero-preview-card:hover {
+      transform: rotate(0deg) scale(1.02);
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.75rem;
+      margin: 3.5rem 0;
+    }
+    .feature-item {
+      background: white;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      transition: var(--transition);
+    }
+    .feature-item:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary);
+    }
+    .feature-icon-badge {
+      width: 52px;
+      height: 52px;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      margin-bottom: 1.25rem;
+    }
+    @media (max-width: 900px) {
+      .hero-section {
+        grid-template-columns: 1fr;
+        padding: 2.5rem 1.75rem;
+        gap: 2rem;
+      }
+      .hero-title {
+        font-size: 2.6rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <a href="/" class="nav-brand">
+      <div class="brand-icon">Q</div>
+      <div class="brand-name">Queue<span>Less</span></div>
+    </a>
+    <div class="nav-links" id="navUserContainer">
+      <a href="/login" class="btn btn-sm btn-outline">Login</a>
+      <a href="/register" class="btn btn-sm btn-primary">
+        <span>Register</span>
+        <span class="pill-arrow">→</span>
+      </a>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Hero Banner with Bounce Sports Style Terracotta & Clean White Cards -->
+    <section class="hero-section">
+      <div>
+        <div style="display: inline-block; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); padding: 0.35rem 1rem; border-radius: var(--radius-pill); font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1.25rem;">
+          ⚡ Next-Gen Queue & Token Management
+        </div>
+        <h1 class="hero-title">Eliminate Physical Lines. Forever.</h1>
+        <p class="hero-subtitle">
+          Generate digital department tokens instantly, track live positions dynamically, and receive real-time call notifications without standing in crowded waiting rooms.
+        </p>
+        <div class="hero-btn-group">
+          <a href="/user-dashboard" class="btn btn-dark btn-lg">
+            <span>Get Started</span>
+            <span class="pill-arrow">→</span>
+          </a>
+          <a href="/admin-dashboard" class="btn btn-outline btn-lg" style="background: rgba(255,255,255,0.15); color: white; border-color: rgba(255,255,255,0.4);">
+            <span>Admin Console</span>
+            <span class="pill-arrow">↗</span>
+          </a>
+          <a href="/display" target="_blank" class="btn btn-outline btn-lg" style="background: rgba(0,0,0,0.2); color: white; border-color: transparent;">
+            <span>Live Hall Board 📺</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Live Ticket Mockup -->
+      <div class="hero-preview-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <span class="badge badge-waiting">College Office Desk</span>
+          <span class="badge badge-called">⚡ Live Sync</span>
+        </div>
+        <div style="font-family: var(--font-display); font-size: 4rem; font-weight: 900; color: var(--primary); line-height: 1; text-align: center; margin: 0.5rem 0;">
+          A025
+        </div>
+        <div style="text-align: center; font-size: 0.95rem; font-weight: 700; color: var(--text-muted); margin-bottom: 1.25rem;">
+          Your Digital Token
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+          <div style="background: var(--bg-sand); padding: 0.85rem; border-radius: var(--radius-md);">
+            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Your Position</div>
+            <div style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; color: var(--dark);">04 In Line</div>
+          </div>
+          <div style="background: var(--bg-sand); padding: 0.85rem; border-radius: var(--radius-md);">
+            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Est. Wait</div>
+            <div style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; color: var(--dark);">~20 min</div>
+          </div>
+        </div>
+
+        <div style="background: #141518; color: white; border-radius: var(--radius-md); padding: 0.85rem 1rem; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.85rem; color: #A0A5B5;">Currently Serving:</span>
+          <strong style="color: #FF7849; font-family: var(--font-display); font-size: 1.15rem;">Token A021</strong>
+        </div>
+      </div>
+    </section>
+
+    <!-- Key Core Capabilities (Phases 1-18) -->
+    <div style="text-align: center; margin-top: 4rem;">
+      <h2 style="font-family: var(--font-display); font-size: 2.2rem; font-weight: 800;">Enterprise Queue Architecture</h2>
+      <p style="color: var(--text-muted); font-size: 1.05rem; max-width: 600px; margin: 0.5rem auto 0;">
+        Built with high-availability MongoDB, Node.js Express, and resilient real-time queue sequencing.
+      </p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-item">
+        <div class="feature-icon-badge">🎯</div>
+        <h3 style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem;">Zero Duplicate Tokens</h3>
+        <p style="color: var(--text-muted); font-size: 0.92rem;">
+          Atomic sequence generation guarantees unique, ordered tokens (A001, A002...) with strict departmental prefixes.
+        </p>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon-badge">⏱️</div>
+        <h3 style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem;">Dynamic Wait Estimation</h3>
+        <p style="color: var(--text-muted); font-size: 0.92rem;">
+          Real-time calculation based on tokens ahead multiplied by department turnaround metrics, auto-updating as lines move.
+        </p>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon-badge">🛡️</div>
+        <h3 style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem;">Desk & Counter Control</h3>
+        <p style="color: var(--text-muted); font-size: 0.92rem;">
+          Full administrative CRUD control to create departments, assign desks, dispatch tokens, skip absentees, and view logs.
+        </p>
+      </div>
+
+      <div class="feature-item">
+        <div class="feature-icon-badge">🔊</div>
+        <h3 style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem;">Audio Chime & Live Hall Display</h3>
+        <p style="color: var(--text-muted); font-size: 0.92rem;">
+          Dedicated public screen view with chime synthesizer for waiting room monitors and instant sound cues when called.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <footer style="text-align: center; padding: 2.5rem; border-top: 1px solid var(--border-light); color: var(--text-muted); font-size: 0.9rem;">
+    QueueLess — Smart Digital Queue and Token Management System &bull; Stack: HTML, CSS, JavaScript, Node.js, Express & MongoDB
+  </footer>
+
+  <script src="/js/auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Auth.setupNavbar();
+    });
+  </script>
+</body>
+</html>

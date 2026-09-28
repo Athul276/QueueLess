@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Queue Board — QueueLess</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body {
+      background-color: #121316;
+      color: #FFFFFF;
+      overflow-x: hidden;
+    }
+    .display-header {
+      background: #181920;
+      border-bottom: 2px solid #282A33;
+      padding: 1.25rem 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .display-counters-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.75rem;
+      padding: 2.5rem;
+    }
+    .display-card {
+      background: #1C1E26;
+      border: 2px solid #2C2F3D;
+      border-radius: var(--radius-xl);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      transition: var(--transition);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+    }
+    .display-card.is-active {
+      border-color: var(--primary);
+      background: #232530;
+      box-shadow: 0 0 35px rgba(232, 80, 37, 0.25);
+    }
+    .display-counter-name {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #A0A5B5;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 0.25rem;
+    }
+    .display-service-name {
+      font-size: 0.95rem;
+      color: #6C7285;
+      margin-bottom: 1.5rem;
+    }
+    .display-token-number {
+      font-family: var(--font-display);
+      font-size: 4.8rem;
+      font-weight: 900;
+      color: var(--primary);
+      letter-spacing: -2px;
+      line-height: 1;
+      text-shadow: 0 0 25px rgba(232, 80, 37, 0.5);
+    }
+    .display-idle {
+      font-family: var(--font-display);
+      font-size: 3rem;
+      font-weight: 800;
+      color: #404454;
+      line-height: 1.5;
+    }
+    .upcoming-banner {
+      background: #181920;
+      margin: 0 2.5rem 2.5rem;
+      padding: 1.5rem 2rem;
+      border-radius: var(--radius-lg);
+      border: 1px solid #282A33;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      overflow-x: auto;
+    }
+    .upcoming-title {
+      font-weight: 800;
+      font-size: 0.9rem;
+      color: #E85025;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+    .upcoming-tokens {
+      display: flex;
+      gap: 0.75rem;
+    }
+    .upcoming-badge {
+      background: #252835;
+      color: #FFFFFF;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.1rem;
+      padding: 0.4rem 1rem;
+      border-radius: var(--radius-pill);
+      border: 1px solid #3A3E50;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="display-header">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <div class="brand-icon">Q</div>
+      <div>
+        <div style="font-family: var(--font-display); font-weight: 900; font-size: 1.6rem; letter-spacing: -0.5px;">
+          Queue<span style="color: var(--primary);">Less</span> Live Board
+        </div>
+        <div style="font-size: 0.85rem; color: #8F95A5;">Public Service Announcement Screen</div>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 1.5rem;">
+      <div id="liveClock" style="font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; color: #FFFFFF;">
+        --:--:--
+      </div>
+      <button onclick="enableSound()" id="soundToggleBtn" class="btn btn-sm btn-outline" style="color: white; border-color: #444;">
+        🔊 Enable Sound Alert
+      </button>
+    </div>
+  </header>
+
+  <!-- Now Serving Counters Grid -->
+  <main class="display-counters-grid" id="countersBoard">
+    <p style="color: #6C7285;">Loading active desks...</p>
+  </main>
+
+  <!-- Upcoming Next Tokens Bar -->
+  <div class="upcoming-banner">
+    <div class="upcoming-title">⚡ Up Next In Queue:</div>
+    <div class="upcoming-tokens" id="upcomingTokensList">
+      <span style="color: #6C7285;">Checking queue...</span>
+    </div>
+  </div>
+
+  <script src="/js/auth.js"></script>
+  <script>
+    let soundEnabled = false;
+    let previousServing = {};
+
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('liveClock').textContent = now.toLocaleTimeString();
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    function enableSound() {
+      soundEnabled = true;
+      Auth.playChime();
+      const btn = document.getElementById('soundToggleBtn');
+      btn.textContent = '🔊 Sound Enabled';
+      btn.style.borderColor = 'var(--primary)';
+      btn.style.color = 'var(--primary)';
+    }
+
+    async function loadDisplayData() {
+      try {
+        const [countersRes, monitorRes] = await Promise.all([
+          fetch('/api/counters'),
+          fetch('/api/tokens/admin/monitoring')
+        ]);
+
+        const countersData = await countersRes.json();
+        const monitorData = await monitorRes.json();
+
+        // Render Counters
+        if (countersData.success) {
+          const container = document.getElementById('countersBoard');
+          const counters = countersData.data || [];
+
+          container.innerHTML = counters.map(cnt => {
+            const hasToken = cnt.currentServingToken && cnt.status !== 'INACTIVE';
+            const tokNum = hasToken ? cnt.currentServingToken.tokenNumber : 'IDLE';
+
+            // Check if newly called
+            if (hasToken && previousServing[cnt._id] !== tokNum) {
+              if (soundEnabled && previousServing[cnt._id] !== undefined) {
+                Auth.playChime();
+              }
+              previousServing[cnt._id] = tokNum;
+            }
+
+            return `
+              <div class="display-card ${hasToken ? 'is-active' : ''}">
+                <div class="display-counter-name">${cnt.counterName}</div>
+                <div class="display-service-name">${cnt.service ? cnt.service.serviceName : 'General Desk'}</div>
+                ${hasToken ? `
+                  <div class="display-token-number">${tokNum}</div>
+                  <div style="margin-top: 1rem;">
+                    <span class="badge badge-called" style="font-size: 0.85rem; padding: 0.4rem 1rem;">NOW SERVING</span>
+                  </div>
+                ` : `
+                  <div class="display-idle">IDLE</div>
+                  <div style="margin-top: 1rem;">
+                    <span class="badge badge-inactive">DESK READY</span>
+                  </div>
+                `}
+              </div>
+            `;
+          }).join('');
+        }
+
+        // Render Upcoming Queue
+        if (monitorData.success) {
+          const waitingTokens = (monitorData.activeQueue || []).filter(t => t.status === 'WAITING');
+          const listElem = document.getElementById('upcomingTokensList');
+
+          if (waitingTokens.length === 0) {
+            listElem.innerHTML = '<span style="color: #6C7285;">No tokens waiting in queue</span>';
+          } else {
+            listElem.innerHTML = waitingTokens.slice(0, 10).map(t => `
+              <span class="upcoming-badge">${t.tokenNumber}</span>
+            `).join('');
+          }
+        }
+      } catch (err) {
+        console.error('Error updating live display board:', err);
+      }
+    }
+
+    // Initial load and poll every 3 seconds
+    loadDisplayData();
+    setInterval(loadDisplayData, 3000);
+  </script>
+</body>
+</html>
