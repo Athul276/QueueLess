@@ -63,6 +63,15 @@ exports.register = async (req, res) => {
       officeAccessCode: code,
     });
 
+    if (userRole === 'admin' && code) {
+      const Service = require('../models/Service');
+      const officeService = await Service.findOne({ code: 'A' });
+      if (officeService) {
+        officeService.accessCode = code;
+        await officeService.save();
+      }
+    }
+
     const token = generateToken(user._id);
 
     res.status(201).json({

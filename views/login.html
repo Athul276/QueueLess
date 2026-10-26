@@ -48,22 +48,6 @@
         </button>
       </form>
 
-      <!-- Quick Demo Credentials for Reviewers -->
-      <div class="demo-credentials-box">
-        <div class="demo-credentials-title">⚡ Quick 1-Click Demo Logins:</div>
-        <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.5rem;">
-          Click below to auto-fill pre-seeded credentials:
-        </p>
-        <div class="demo-btn-group">
-          <button type="button" class="btn btn-sm btn-dark" onclick="fillAndLogin('admin@queueless.com', 'admin123')">
-            Admin (Full Access)
-          </button>
-          <button type="button" class="btn btn-sm btn-secondary" onclick="fillAndLogin('athul@example.com', 'user123')">
-            User (Athul)
-          </button>
-        </div>
-      </div>
-
       <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
         Don't have an account yet? <a href="/register" style="color: var(--primary); font-weight: 700; text-decoration: none;">Create an account</a>
       </p>
@@ -88,12 +72,6 @@
         await executeLogin(email, password);
       });
     });
-
-    async function fillAndLogin(email, pass) {
-      document.getElementById('loginEmail').value = email;
-      document.getElementById('loginPassword').value = pass;
-      await executeLogin(email, pass);
-    }
 
     async function executeLogin(email, password) {
       const btn = document.getElementById('submitLoginBtn');

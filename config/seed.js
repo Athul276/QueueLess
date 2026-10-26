@@ -199,9 +199,7 @@ const seedData = async () => {
       });
     }
 
-    console.log('✅ Demo Seed Data Loaded Successfully!');
-    console.log('   Admin: admin@queueless.com / admin123');
-    console.log('   User:  athul@example.com / user123');
+    console.log('✅ System Database Initialized & Services Configured Successfully!');
   } catch (error) {
     console.error('Seed data error:', error);
   }
