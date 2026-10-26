@@ -116,6 +116,9 @@ async function loadMonitoringData(isPolling = false) {
                   </button>
                 `
                     : `
+                  <button onclick="handleCallSpecificToken('${tok._id}')" class="btn btn-sm btn-primary" title="Call to selected counter">
+                    📢 Call
+                  </button>
                   <button onclick="handleSkipToken('${tok._id}')" class="btn btn-sm btn-secondary" title="Skip">
                     Skip
                   </button>
@@ -142,23 +145,40 @@ async function loadCountersDropdown() {
     const data = await res.json();
     if (!data.success) return;
 
-    allCounters = data.data;
+    allCounters = data.data || [];
     const select = document.getElementById('quickCallCounterSelect');
     if (!select) return;
 
-    select.innerHTML = '<option value="">-- Select Active Counter --</option>' +
+    const savedVal = localStorage.getItem('queueless_admin_active_counter');
+    const currentVal = select.value || savedVal;
+
+    if (allCounters.length === 0) {
+      select.innerHTML = '<option value="">-- No Counters Available --</option>';
+      return;
+    }
+
+    select.innerHTML = '<option value="">-- Select Active Counter Desk --</option>' +
       allCounters
-        .filter((c) => c.status !== 'INACTIVE')
         .map(
           (c) =>
-            `<option value="${c._id}">${c.counterName} (${c.service ? c.service.serviceName : 'No Service'}) - ${c.status}</option>`
+            `<option value="${c._id}">${c.counterName} (${c.service ? c.service.serviceName : 'General Desk'}) - ${c.status}</option>`
         )
         .join('');
 
-    // Preselect first counter if available
-    if (select.options.length > 1) {
+    // Restore previous selection if still available
+    if (currentVal && allCounters.some((c) => String(c._id) === String(currentVal))) {
+      select.value = currentVal;
+    } else if (select.options.length > 1) {
       select.selectedIndex = 1;
+      localStorage.setItem('queueless_admin_active_counter', select.value);
     }
+
+    // Remember counter selection on change
+    select.onchange = (e) => {
+      if (e.target.value) {
+        localStorage.setItem('queueless_admin_active_counter', e.target.value);
+      }
+    };
   } catch (err) {
     console.error('Error loading counters dropdown:', err);
   }
@@ -167,15 +187,24 @@ async function loadCountersDropdown() {
 // 3. Quick "CALL NEXT" Action
 async function handleCallNext() {
   const counterSelect = document.getElementById('quickCallCounterSelect');
-  const counterId = counterSelect ? counterSelect.value : null;
+  let counterId = counterSelect ? counterSelect.value : null;
 
   if (!counterId) {
-    Auth.showToast('Please select a counter to call next token', 'warning');
-    return;
+    counterId = localStorage.getItem('queueless_admin_active_counter');
+  }
+
+  if (!counterId) {
+    if (allCounters && allCounters.length > 0) {
+      counterId = allCounters[0]._id;
+      if (counterSelect) counterSelect.value = counterId;
+    } else {
+      Auth.showToast('Please select or create an active counter desk first', 'warning');
+      return;
+    }
   }
 
   const btn = document.getElementById('callNextBtn');
-  btn.disabled = true;
+  if (btn) btn.disabled = true;
 
   try {
     const res = await Auth.fetchWithAuth('/api/tokens/call-next', {
@@ -190,7 +219,7 @@ async function handleCallNext() {
         Auth.playChime();
         Auth.showToast(data.message, 'success');
       } else {
-        Auth.showToast('No more waiting tokens for this service!', 'info');
+        Auth.showToast(data.message || 'No more waiting tokens for this counter department.', 'info');
       }
       await loadMonitoringData();
       await loadCountersDropdown();
@@ -201,7 +230,48 @@ async function handleCallNext() {
   } catch (err) {
     Auth.showToast(err.message, 'error');
   } finally {
-    btn.disabled = false;
+    if (btn) btn.disabled = false;
+  }
+}
+
+// Call a specific waiting token directly to a counter
+async function handleCallSpecificToken(tokenId) {
+  const counterSelect = document.getElementById('quickCallCounterSelect');
+  let counterId = counterSelect ? counterSelect.value : null;
+
+  if (!counterId) {
+    counterId = localStorage.getItem('queueless_admin_active_counter');
+  }
+
+  if (!counterId && allCounters && allCounters.length > 0) {
+    counterId = allCounters[0]._id;
+    if (counterSelect) counterSelect.value = counterId;
+  }
+
+  if (!counterId) {
+    Auth.showToast('Please select or create an active counter desk first', 'warning');
+    return;
+  }
+
+  try {
+    const res = await Auth.fetchWithAuth('/api/tokens/call-next', {
+      method: 'POST',
+      body: JSON.stringify({ counterId, tokenId }),
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      Auth.playChime();
+      Auth.showToast(data.message, 'success');
+      await loadMonitoringData();
+      await loadCountersDropdown();
+      await loadCountersTab();
+    } else {
+      Auth.showToast(data.message || 'Error calling token', 'error');
+    }
+  } catch (err) {
+    Auth.showToast(err.message, 'error');
   }
 }
 
@@ -442,38 +512,67 @@ async function loadCountersTab() {
   }
 }
 
-function openAddCounterModal() {
-  document.getElementById('counterModalTitle').textContent = 'Add New Counter';
+async function openAddCounterModal() {
+  document.getElementById('counterModalTitle').textContent = 'Add New Counter Desk';
   document.getElementById('counterFormId').value = '';
-  document.getElementById('counterNameInput').value = '';
+  document.getElementById('counterNameInput').value = `Counter ${allCounters.length + 1}`;
   document.getElementById('counterStatusInput').value = 'ACTIVE';
 
-  populateCounterServiceDropdown();
+  await populateCounterServiceDropdown();
   document.getElementById('counterModal').classList.add('active');
 }
 
-function openEditCounterModal(id) {
-  const cnt = allCounters.find((c) => c._id === id);
+async function openEditCounterModal(id) {
+  const cnt = allCounters.find((c) => String(c._id) === String(id));
   if (!cnt) return;
 
-  document.getElementById('counterModalTitle').textContent = 'Edit Counter';
+  document.getElementById('counterModalTitle').textContent = 'Edit Counter Desk';
   document.getElementById('counterFormId').value = cnt._id;
   document.getElementById('counterNameInput').value = cnt.counterName;
   document.getElementById('counterStatusInput').value = cnt.status;
 
-  populateCounterServiceDropdown(cnt.service ? cnt.service._id : null);
+  const currentServiceId = cnt.service
+    ? (typeof cnt.service === 'object' ? cnt.service._id : cnt.service)
+    : null;
+
+  await populateCounterServiceDropdown(currentServiceId);
   document.getElementById('counterModal').classList.add('active');
 }
 
-function populateCounterServiceDropdown(selectedId = null) {
+async function populateCounterServiceDropdown(selectedId = null) {
   const select = document.getElementById('counterServiceSelect');
+  if (!select) return;
+
+  if (!allServices || allServices.length === 0) {
+    try {
+      const res = await Auth.fetchWithAuth('/api/services?all=true');
+      const data = await res.json();
+      if (data.success && data.data) {
+        allServices = data.data;
+      }
+    } catch (e) {
+      console.error('Failed to load services for counter modal:', e);
+    }
+  }
+
+  const normSelected = selectedId ? String(selectedId) : '';
+
+  if (!allServices || allServices.length === 0) {
+    select.innerHTML = '<option value="">-- No Department Services Available --</option>';
+    return;
+  }
+
   select.innerHTML = '<option value="">-- Choose Assigned Service --</option>' +
     allServices
       .map(
         (s) =>
-          `<option value="${s._id}" ${selectedId === s._id ? 'selected' : ''}>${s.serviceName} (${s.code})</option>`
+          `<option value="${s._id}" ${normSelected === String(s._id) ? 'selected' : ''}>${s.serviceName} (${s.code})</option>`
       )
       .join('');
+
+  if (normSelected) {
+    select.value = normSelected;
+  }
 }
 
 async function handleSaveCounter(e) {

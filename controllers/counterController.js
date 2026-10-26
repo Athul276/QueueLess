@@ -6,10 +6,33 @@ const Service = require('../models/Service');
 // @access  Public / Private
 exports.getCounters = async (req, res) => {
   try {
-    const counters = await Counter.find()
+    let counters = await Counter.find()
       .populate('service', 'serviceName code avgServiceTimeMinutes status')
       .populate('currentServingToken', 'tokenNumber status calledAt user')
       .sort({ counterName: 1 });
+
+    // Auto-heal any counters where service was unlinked or deleted
+    const activeServices = await Service.find({ status: 'ACTIVE' });
+    if (activeServices.length > 0) {
+      let needsRefetch = false;
+      for (let i = 0; i < counters.length; i++) {
+        const cnt = counters[i];
+        if (!cnt.service) {
+          const fallback = activeServices[i % activeServices.length];
+          await Counter.findByIdAndUpdate(cnt._id, {
+            service: fallback._id,
+            status: cnt.status === 'INACTIVE' ? 'ACTIVE' : cnt.status,
+          });
+          needsRefetch = true;
+        }
+      }
+      if (needsRefetch) {
+        counters = await Counter.find()
+          .populate('service', 'serviceName code avgServiceTimeMinutes status')
+          .populate('currentServingToken', 'tokenNumber status calledAt user')
+          .sort({ counterName: 1 });
+      }
+    }
 
     res.status(200).json({
       success: true,

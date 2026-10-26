@@ -249,27 +249,60 @@ exports.getTokenLiveStatus = async (req, res) => {
 // @access  Private / Admin
 exports.callNextToken = async (req, res) => {
   try {
-    const { counterId, serviceId } = req.body;
+    const { counterId, serviceId, tokenId } = req.body;
 
     let counter = null;
     let targetServiceId = serviceId;
 
     if (counterId) {
-      counter = await Counter.findById(counterId);
+      counter = await Counter.findById(counterId).populate('service');
       if (!counter) {
         return res.status(404).json({
           success: false,
-          message: 'Counter not found',
+          message: 'Selected counter desk not found',
         });
       }
-      targetServiceId = counter.service;
+
+      // If counter service is missing or unlinked, assign an active service
+      if (!counter.service) {
+        const fallbackSvc = await Service.findOne({ status: 'ACTIVE' });
+        if (fallbackSvc) {
+          counter.service = fallbackSvc._id;
+          await counter.save();
+          targetServiceId = fallbackSvc._id;
+        }
+      } else {
+        targetServiceId = counter.service._id || counter.service;
+      }
+    }
+
+    let nextToken = null;
+
+    if (tokenId) {
+      nextToken = await Token.findById(tokenId);
+      if (!nextToken) {
+        return res.status(404).json({
+          success: false,
+          message: 'Selected token not found',
+        });
+      }
+      if (nextToken.status !== 'WAITING') {
+        return res.status(400).json({
+          success: false,
+          message: `Token ${nextToken.tokenNumber} is already ${nextToken.status}. Only WAITING tokens can be called.`,
+        });
+      }
+      targetServiceId = nextToken.service;
     }
 
     if (!targetServiceId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide either a counterId or serviceId to call next token',
-      });
+      const anyWaiting = await Token.findOne({ status: 'WAITING' }).sort({ sequenceNumber: 1 });
+      if (anyWaiting) {
+        targetServiceId = anyWaiting.service;
+      } else {
+        const anySvc = await Service.findOne({ status: 'ACTIVE' });
+        if (anySvc) targetServiceId = anySvc._id;
+      }
     }
 
     // 1. If counter currently has a CALLED token, automatically mark it as COMPLETED
@@ -281,11 +314,13 @@ exports.callNextToken = async (req, res) => {
       counter.currentServingToken = null;
     }
 
-    // 2. Find the earliest WAITING token for this service
-    const nextToken = await Token.findOne({
-      service: targetServiceId,
-      status: 'WAITING',
-    }).sort({ sequenceNumber: 1 });
+    // 2. If no specific token requested, find earliest WAITING token for this service
+    if (!nextToken && targetServiceId) {
+      nextToken = await Token.findOne({
+        service: targetServiceId,
+        status: 'WAITING',
+      }).sort({ sequenceNumber: 1 });
+    }
 
     if (!nextToken) {
       if (counter) {
@@ -296,7 +331,7 @@ exports.callNextToken = async (req, res) => {
       return res.status(200).json({
         success: true,
         data: null,
-        message: 'No more waiting tokens for this service!',
+        message: 'No more waiting tokens for this counter department. (Tip: You can click "Call" directly on any waiting student in the queue ladder below!)',
       });
     }
 
@@ -319,7 +354,7 @@ exports.callNextToken = async (req, res) => {
     res.status(200).json({
       success: true,
       data: populatedToken,
-      message: `Now Serving: Token ${nextToken.tokenNumber}!`,
+      message: `Now Serving: Token ${nextToken.tokenNumber} at ${counter ? counter.counterName : 'Counter'}!`,
     });
   } catch (error) {
     console.error('Call next error:', error);

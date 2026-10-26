@@ -6,174 +6,198 @@ const Token = require('../models/Token');
 const seedData = async () => {
   try {
     const userCount = await User.countDocuments();
-    if (userCount > 0) {
-      console.log('📦 Database already has data. Skipping seed.');
-      return;
+    let admin, userAthul, userPriya, userRahul;
+
+    if (userCount === 0) {
+      console.log('🌱 Seeding initial QueueLess users...');
+
+      // 1. Create Admin & Demo User
+      admin = await User.create({
+        name: 'System Admin',
+        email: 'admin@queueless.com',
+        password: 'admin123',
+        role: 'admin',
+        officeAccessCode: 'MACE-OFFICE-2026',
+      });
+
+      userAthul = await User.create({
+        name: 'Athul',
+        email: 'athul@example.com',
+        password: 'user123',
+        role: 'user',
+      });
+
+      userPriya = await User.create({
+        name: 'Priya Sharma',
+        email: 'priya@example.com',
+        password: 'user123',
+        role: 'user',
+      });
+
+      userRahul = await User.create({
+        name: 'Rahul Nair',
+        email: 'rahul@example.com',
+        password: 'user123',
+        role: 'user',
+      });
+    } else {
+      admin = await User.findOne({ role: 'admin' });
+      userAthul = await User.findOne({ email: 'athul@example.com' }) || admin;
+      userPriya = await User.findOne({ email: 'priya@example.com' }) || admin;
+      userRahul = await User.findOne({ email: 'rahul@example.com' }) || admin;
     }
 
-    console.log('🌱 Seeding initial QueueLess data...');
+    // 2. Ensure Default Services with College Access Keys exist
+    const defaultServices = [
+      {
+        serviceName: 'College Office',
+        code: 'A',
+        description: 'Fee collection, document submissions & hall ticket inquiries',
+        avgServiceTimeMinutes: 5,
+        status: 'ACTIVE',
+        accessCode: 'MACE-OFFICE',
+        requireAccessCode: true,
+      },
+      {
+        serviceName: 'Laboratory',
+        code: 'B',
+        description: 'Equipment allocation, project evaluations & lab clearances',
+        avgServiceTimeMinutes: 8,
+        status: 'ACTIVE',
+        accessCode: 'MACE-LAB',
+        requireAccessCode: true,
+      },
+      {
+        serviceName: 'Clinic',
+        code: 'C',
+        description: 'Health consultations, first-aid & medical leave endorsements',
+        avgServiceTimeMinutes: 7,
+        status: 'ACTIVE',
+        accessCode: 'MACE-CLINIC',
+        requireAccessCode: true,
+      },
+      {
+        serviceName: 'Certificate Section',
+        code: 'D',
+        description: 'Transcript issuance, bonafide & migration certificates',
+        avgServiceTimeMinutes: 6,
+        status: 'ACTIVE',
+        accessCode: 'MACE-CERT',
+        requireAccessCode: true,
+      },
+    ];
 
-    // 1. Create Admin & Demo User
-    const admin = await User.create({
-      name: 'System Admin',
-      email: 'admin@queueless.com',
-      password: 'admin123',
-      role: 'admin',
-      officeAccessCode: 'MACE-OFFICE-2026',
-    });
+    for (const def of defaultServices) {
+      const exists = await Service.findOne({ $or: [{ code: def.code }, { serviceName: def.serviceName }] });
+      if (!exists) {
+        await Service.create(def);
+      }
+    }
 
-    const userAthul = await User.create({
-      name: 'Athul',
-      email: 'athul@example.com',
-      password: 'user123',
-      role: 'user',
-    });
+    const allCurrentServices = await Service.find({ status: 'ACTIVE' });
 
-    const userPriya = await User.create({
-      name: 'Priya Sharma',
-      email: 'priya@example.com',
-      password: 'user123',
-      role: 'user',
-    });
+    // 3. Ensure Default Counters exist and are assigned to valid services
+    const counterNames = ['Counter 1', 'Counter 2', 'Counter 3', 'Counter 4'];
+    let counter1 = null, counter2 = null;
 
-    const userRahul = await User.create({
-      name: 'Rahul Nair',
-      email: 'rahul@example.com',
-      password: 'user123',
-      role: 'user',
-    });
+    for (let i = 0; i < counterNames.length; i++) {
+      const name = counterNames[i];
+      let cnt = await Counter.findOne({ counterName: name });
+      const targetSvc = allCurrentServices[i % allCurrentServices.length];
 
-    // 2. Create Services with College Access Keys
-    const serviceOffice = await Service.create({
-      serviceName: 'College Office',
-      code: 'A',
-      description: 'Fee collection, document submissions & hall ticket inquiries',
-      avgServiceTimeMinutes: 5,
-      status: 'ACTIVE',
-      accessCode: 'MACE-OFFICE',
-      requireAccessCode: true,
-    });
+      if (!cnt) {
+        cnt = await Counter.create({
+          counterName: name,
+          service: targetSvc ? targetSvc._id : null,
+          status: 'ACTIVE',
+        });
+      } else {
+        const svcExists = cnt.service ? await Service.findById(cnt.service) : null;
+        if (!svcExists && targetSvc) {
+          cnt.service = targetSvc._id;
+          if (cnt.status === 'INACTIVE') cnt.status = 'ACTIVE';
+          await cnt.save();
+        }
+      }
 
-    const serviceLab = await Service.create({
-      serviceName: 'Laboratory',
-      code: 'B',
-      description: 'Equipment allocation, project evaluations & lab clearances',
-      avgServiceTimeMinutes: 8,
-      status: 'ACTIVE',
-      accessCode: 'MACE-LAB',
-      requireAccessCode: true,
-    });
+      if (name === 'Counter 1') counter1 = cnt;
+      if (name === 'Counter 2') counter2 = cnt;
+    }
 
-    const serviceClinic = await Service.create({
-      serviceName: 'Clinic',
-      code: 'C',
-      description: 'Health consultations, first-aid & medical leave endorsements',
-      avgServiceTimeMinutes: 7,
-      status: 'ACTIVE',
-      accessCode: 'MACE-CLINIC',
-      requireAccessCode: true,
-    });
+    const serviceOffice = await Service.findOne({ code: 'A' }) || allCurrentServices[0];
+    const serviceLab = await Service.findOne({ code: 'B' }) || allCurrentServices[1] || serviceOffice;
 
-    const serviceCert = await Service.create({
-      serviceName: 'Certificate Section',
-      code: 'D',
-      description: 'Transcript issuance, bonafide & migration certificates',
-      avgServiceTimeMinutes: 6,
-      status: 'ACTIVE',
-      accessCode: 'MACE-CERT',
-      requireAccessCode: true,
-    });
+    // 4. Create Initial Tokens if none exist
+    const tokenCount = await Token.countDocuments();
+    if (tokenCount === 0 && userAthul && serviceOffice && counter1) {
+      // Completed history tokens
+      await Token.create({
+        tokenNumber: 'A015',
+        sequenceNumber: 15,
+        user: userAthul._id,
+        service: serviceOffice._id,
+        counter: counter1._id,
+        status: 'COMPLETED',
+        calledAt: new Date(Date.now() - 45 * 60 * 1000),
+        completedAt: new Date(Date.now() - 40 * 60 * 1000),
+      });
 
-    // 3. Create Counters
-    const counter1 = await Counter.create({
-      counterName: 'Counter 1',
-      service: serviceOffice._id,
-      status: 'BUSY',
-    });
+      if (counter2 && serviceLab) {
+        await Token.create({
+          tokenNumber: 'B008',
+          sequenceNumber: 8,
+          user: userPriya._id,
+          service: serviceLab._id,
+          counter: counter2._id,
+          status: 'COMPLETED',
+          calledAt: new Date(Date.now() - 30 * 60 * 1000),
+          completedAt: new Date(Date.now() - 22 * 60 * 1000),
+        });
+      }
 
-    const counter2 = await Counter.create({
-      counterName: 'Counter 2',
-      service: serviceLab._id,
-      status: 'ACTIVE',
-    });
+      // Now Serving Token
+      const servingToken = await Token.create({
+        tokenNumber: 'A021',
+        sequenceNumber: 21,
+        user: userPriya._id,
+        service: serviceOffice._id,
+        counter: counter1._id,
+        status: 'CALLED',
+        calledAt: new Date(Date.now() - 3 * 60 * 1000),
+      });
 
-    const counter3 = await Counter.create({
-      counterName: 'Counter 3',
-      service: serviceClinic._id,
-      status: 'ACTIVE',
-    });
+      counter1.currentServingToken = servingToken._id;
+      counter1.status = 'BUSY';
+      await counter1.save();
 
-    const counter4 = await Counter.create({
-      counterName: 'Counter 4',
-      service: serviceCert._id,
-      status: 'ACTIVE',
-    });
+      // Waiting queue
+      await Token.create({
+        tokenNumber: 'A022',
+        sequenceNumber: 22,
+        user: userRahul._id,
+        service: serviceOffice._id,
+        status: 'WAITING',
+        estimatedWaitMinutes: 5,
+      });
 
-    // 4. Create Initial Tokens
-    // Completed history tokens
-    await Token.create({
-      tokenNumber: 'A015',
-      sequenceNumber: 15,
-      user: userAthul._id,
-      service: serviceOffice._id,
-      counter: counter1._id,
-      status: 'COMPLETED',
-      calledAt: new Date(Date.now() - 45 * 60 * 1000),
-      completedAt: new Date(Date.now() - 40 * 60 * 1000),
-    });
+      await Token.create({
+        tokenNumber: 'A023',
+        sequenceNumber: 23,
+        user: userPriya._id,
+        service: serviceOffice._id,
+        status: 'WAITING',
+        estimatedWaitMinutes: 10,
+      });
 
-    await Token.create({
-      tokenNumber: 'B008',
-      sequenceNumber: 8,
-      user: userPriya._id,
-      service: serviceLab._id,
-      counter: counter2._id,
-      status: 'COMPLETED',
-      calledAt: new Date(Date.now() - 30 * 60 * 1000),
-      completedAt: new Date(Date.now() - 22 * 60 * 1000),
-    });
-
-    // Now Serving Token
-    const servingToken = await Token.create({
-      tokenNumber: 'A021',
-      sequenceNumber: 21,
-      user: userPriya._id,
-      service: serviceOffice._id,
-      counter: counter1._id,
-      status: 'CALLED',
-      calledAt: new Date(Date.now() - 3 * 60 * 1000),
-    });
-
-    counter1.currentServingToken = servingToken._id;
-    await counter1.save();
-
-    // Waiting queue
-    await Token.create({
-      tokenNumber: 'A022',
-      sequenceNumber: 22,
-      user: userRahul._id,
-      service: serviceOffice._id,
-      status: 'WAITING',
-      estimatedWaitMinutes: 5,
-    });
-
-    await Token.create({
-      tokenNumber: 'A023',
-      sequenceNumber: 23,
-      user: userPriya._id,
-      service: serviceOffice._id,
-      status: 'WAITING',
-      estimatedWaitMinutes: 10,
-    });
-
-    await Token.create({
-      tokenNumber: 'A024',
-      sequenceNumber: 24,
-      user: admin._id,
-      service: serviceOffice._id,
-      status: 'WAITING',
-      estimatedWaitMinutes: 15,
-    });
+      await Token.create({
+        tokenNumber: 'A024',
+        sequenceNumber: 24,
+        user: admin._id,
+        service: serviceOffice._id,
+        status: 'WAITING',
+        estimatedWaitMinutes: 15,
+      });
+    }
 
     console.log('✅ Demo Seed Data Loaded Successfully!');
     console.log('   Admin: admin@queueless.com / admin123');
