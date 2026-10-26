@@ -51,6 +51,27 @@
             </button>
           </div>
 
+          <!-- College Office Queue Access Key Box -->
+          <div class="card" style="margin-bottom: 1.5rem; background: #FFF9F6; border: 1.5px dashed var(--primary); padding: 1.25rem 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <div style="font-weight: 800; font-size: 1.05rem; color: var(--dark); display: flex; align-items: center; gap: 0.5rem;">
+                  <span>🔑</span> College Office Queue Access Key
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 0.25rem;">
+                  Enter the authorization key provided by your College Office (e.g., <strong>MACE-OFFICE</strong>) to unlock and join the queue.
+                </p>
+              </div>
+              <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <input type="text" id="userAccessKeyInput" class="form-input" placeholder="e.g. MACE-OFFICE" style="max-width: 200px; text-transform: uppercase; font-weight: 700;">
+                <button type="button" onclick="handleApplyAccessKey()" class="btn btn-sm btn-primary">
+                  <span>Unlock Queue</span>
+                  <span class="pill-arrow">→</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- Dynamic Services Grid -->
           <div id="servicesList" class="services-grid">
             <p class="text-muted">Loading department services...</p>

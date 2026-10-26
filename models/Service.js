@@ -29,6 +29,16 @@ const serviceSchema = new mongoose.Schema(
       enum: ['ACTIVE', 'INACTIVE'],
       default: 'ACTIVE',
     },
+    accessCode: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      default: '',
+    },
+    requireAccessCode: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true,

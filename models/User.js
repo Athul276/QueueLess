@@ -30,6 +30,12 @@ const userSchema = new mongoose.Schema(
       enum: ['user', 'admin'],
       default: 'user',
     },
+    officeAccessCode: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      default: '',
+    },
   },
   {
     timestamps: true,

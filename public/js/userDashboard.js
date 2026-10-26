@@ -23,6 +23,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     userNameElem.textContent = user.name;
   }
 
+  // Pre-fill remembered College Office Access Key
+  const savedKey = localStorage.getItem('queueless_access_key') || 'MACE-OFFICE';
+  const keyInput = document.getElementById('userAccessKeyInput');
+  if (keyInput) {
+    keyInput.value = savedKey;
+  }
+
   await loadServices();
   await loadUserTokens();
 
@@ -31,6 +38,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadUserTokens(true);
   }, 3000);
 });
+
+// Apply and remember Office Access Key
+function handleApplyAccessKey() {
+  const input = document.getElementById('userAccessKeyInput');
+  const key = input ? input.value.trim().toUpperCase() : '';
+  if (!key) {
+    Auth.showToast('Please enter an Office Access Key (e.g. MACE-OFFICE)', 'warning');
+    return;
+  }
+  localStorage.setItem('queueless_access_key', key);
+  Auth.showToast(`🔑 College Office Key "${key}" Applied! You can now join authorized office queues.`, 'success');
+}
 
 // Load available services
 async function loadServices() {
@@ -53,7 +72,10 @@ async function loadServices() {
              onclick="selectService('${svc._id}', '${svc.serviceName}', '${svc.code}')" id="svc-${svc._id}">
           <div class="service-card-top">
             <div class="service-code-badge">${svc.code}</div>
-            <span class="badge badge-waiting">${svc.waitingCount} in line</span>
+            <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
+              ${svc.requireAccessCode ? `<span class="badge badge-waiting" style="font-size:0.72rem; padding: 0.2rem 0.5rem;">🔑 Key Protected</span>` : ''}
+              <span class="badge badge-waiting">${svc.waitingCount} in line</span>
+            </div>
           </div>
           <h3 class="service-card-title">${svc.serviceName}</h3>
           <p class="service-card-desc">${svc.description || 'Standard service desk'}</p>
@@ -91,6 +113,11 @@ async function handleGenerateToken() {
     return;
   }
 
+  const accessKeyInput = document.getElementById('userAccessKeyInput');
+  const accessCode = accessKeyInput 
+    ? accessKeyInput.value.trim().toUpperCase() 
+    : (localStorage.getItem('queueless_access_key') || '');
+
   const btn = document.getElementById('generateTokenBtn');
   btn.disabled = true;
   btn.textContent = 'Generating Token...';
@@ -98,7 +125,7 @@ async function handleGenerateToken() {
   try {
     const res = await Auth.fetchWithAuth('/api/tokens/generate', {
       method: 'POST',
-      body: JSON.stringify({ serviceId: selectedServiceId }),
+      body: JSON.stringify({ serviceId: selectedServiceId, accessCode }),
     });
 
     const data = await res.json();
@@ -110,6 +137,11 @@ async function handleGenerateToken() {
       await loadUserTokens();
     } else {
       Auth.showToast(data.message || 'Could not generate token', 'error');
+      if (data.requireAccessCode && accessKeyInput) {
+        accessKeyInput.focus();
+        accessKeyInput.style.borderColor = 'var(--primary)';
+        accessKeyInput.style.boxShadow = '0 0 0 4px var(--primary-glow)';
+      }
     }
   } catch (err) {
     Auth.showToast(err.message || 'Error communicating with server', 'error');

@@ -19,6 +19,7 @@ const seedData = async () => {
       email: 'admin@queueless.com',
       password: 'admin123',
       role: 'admin',
+      officeAccessCode: 'MACE-OFFICE-2026',
     });
 
     const userAthul = await User.create({
@@ -42,13 +43,15 @@ const seedData = async () => {
       role: 'user',
     });
 
-    // 2. Create Services
+    // 2. Create Services with College Access Keys
     const serviceOffice = await Service.create({
       serviceName: 'College Office',
       code: 'A',
       description: 'Fee collection, document submissions & hall ticket inquiries',
       avgServiceTimeMinutes: 5,
       status: 'ACTIVE',
+      accessCode: 'MACE-OFFICE',
+      requireAccessCode: true,
     });
 
     const serviceLab = await Service.create({
@@ -57,6 +60,8 @@ const seedData = async () => {
       description: 'Equipment allocation, project evaluations & lab clearances',
       avgServiceTimeMinutes: 8,
       status: 'ACTIVE',
+      accessCode: 'MACE-LAB',
+      requireAccessCode: true,
     });
 
     const serviceClinic = await Service.create({
@@ -65,6 +70,8 @@ const seedData = async () => {
       description: 'Health consultations, first-aid & medical leave endorsements',
       avgServiceTimeMinutes: 7,
       status: 'ACTIVE',
+      accessCode: 'MACE-CLINIC',
+      requireAccessCode: true,
     });
 
     const serviceCert = await Service.create({
@@ -73,6 +80,8 @@ const seedData = async () => {
       description: 'Transcript issuance, bonafide & migration certificates',
       avgServiceTimeMinutes: 6,
       status: 'ACTIVE',
+      accessCode: 'MACE-CERT',
+      requireAccessCode: true,
     });
 
     // 3. Create Counters

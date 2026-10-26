@@ -13,7 +13,7 @@ const formatTokenNumber = (code, seq) => {
 // @access  Private (Logged-in User)
 exports.generateToken = async (req, res) => {
   try {
-    const { serviceId } = req.body;
+    const { serviceId, accessCode } = req.body;
     const userId = req.user.id;
 
     if (!serviceId) {
@@ -29,6 +29,17 @@ exports.generateToken = async (req, res) => {
         success: false,
         message: 'Selected service is not currently available',
       });
+    }
+
+    // Verify College Office Access Key if required
+    if (service.requireAccessCode && service.accessCode) {
+      if (!accessCode || accessCode.trim().toUpperCase() !== service.accessCode.trim().toUpperCase()) {
+        return res.status(403).json({
+          success: false,
+          requireAccessCode: true,
+          message: `🔑 Authorization Required: Please enter the valid College Office Queue Access Key for "${service.serviceName}" to join this queue.`,
+        });
+      }
     }
 
     // Check if user already has an active WAITING or CALLED token for this service

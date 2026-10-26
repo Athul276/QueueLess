@@ -26,6 +26,8 @@ exports.getServices = async (req, res) => {
           ...svc.toObject(),
           waitingCount,
           currentServingToken: currentServing ? currentServing.tokenNumber : 'None',
+          requireAccessCode: !!svc.accessCode,
+          accessCode: svc.accessCode || '',
         };
       })
     );
@@ -72,7 +74,7 @@ exports.getServiceById = async (req, res) => {
 // @access  Private / Admin
 exports.createService = async (req, res) => {
   try {
-    const { serviceName, code, description, avgServiceTimeMinutes, status } = req.body;
+    const { serviceName, code, description, avgServiceTimeMinutes, status, accessCode, requireAccessCode } = req.body;
 
     if (!serviceName || !code) {
       return res.status(400).json({
@@ -92,12 +94,18 @@ exports.createService = async (req, res) => {
       });
     }
 
+    const finalAccessCode = accessCode 
+      ? accessCode.trim().toUpperCase() 
+      : `MACE-${code.toUpperCase().trim()}`;
+
     const service = await Service.create({
       serviceName: serviceName.trim(),
       code: code.toUpperCase().trim(),
       description: description || '',
       avgServiceTimeMinutes: Number(avgServiceTimeMinutes) || 5,
       status: status || 'ACTIVE',
+      accessCode: finalAccessCode,
+      requireAccessCode: requireAccessCode !== undefined ? requireAccessCode : true,
     });
 
     res.status(201).json({
@@ -118,7 +126,7 @@ exports.createService = async (req, res) => {
 // @access  Private / Admin
 exports.updateService = async (req, res) => {
   try {
-    const { serviceName, code, description, avgServiceTimeMinutes, status } = req.body;
+    const { serviceName, code, description, avgServiceTimeMinutes, status, accessCode, requireAccessCode } = req.body;
 
     let service = await Service.findById(req.params.id);
     if (!service) {
@@ -133,6 +141,8 @@ exports.updateService = async (req, res) => {
     if (description !== undefined) service.description = description;
     if (avgServiceTimeMinutes) service.avgServiceTimeMinutes = Number(avgServiceTimeMinutes);
     if (status) service.status = status;
+    if (accessCode !== undefined) service.accessCode = accessCode.trim().toUpperCase();
+    if (requireAccessCode !== undefined) service.requireAccessCode = Boolean(requireAccessCode);
 
     await service.save();
 

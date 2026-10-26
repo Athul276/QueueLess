@@ -10,6 +10,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!Auth.requireAuth('admin')) return;
   Auth.setupNavbar();
 
+  // Display Admin Office Key
+  const user = Auth.getUser();
+  const keyDisplay = document.getElementById('adminOfficeAccessKeyDisplay');
+  if (keyDisplay) {
+    keyDisplay.textContent = (user && user.officeAccessCode) ? user.officeAccessCode : 'MACE-OFFICE';
+  }
+
   // Load initial data
   await loadMonitoringData();
   await loadCountersDropdown();
@@ -257,6 +264,16 @@ async function handleCancelToken(tokenId) {
   }
 }
 
+function copyAdminOfficeKey() {
+  const keyDisplay = document.getElementById('adminOfficeAccessKeyDisplay');
+  const key = keyDisplay ? keyDisplay.textContent.trim() : 'MACE-OFFICE';
+  navigator.clipboard.writeText(key).then(() => {
+    Auth.showToast(`Copied Access Key: ${key}! Share this with students.`, 'success');
+  }).catch(() => {
+    Auth.showToast(`Access Key: ${key}`, 'info');
+  });
+}
+
 // ==========================================================================
 // Services Tab CRUD
 // ==========================================================================
@@ -276,6 +293,7 @@ async function loadServicesTab() {
         <tr>
           <td><span class="badge badge-waiting" style="font-size:0.9rem;">${svc.code}</span></td>
           <td><strong>${svc.serviceName}</strong></td>
+          <td><span class="badge badge-called" style="font-family: monospace; font-size: 0.82rem; letter-spacing: 0.5px;">${svc.accessCode || 'OPEN'}</span></td>
           <td style="color: var(--text-muted);">${svc.description || '—'}</td>
           <td>${svc.avgServiceTimeMinutes} min</td>
           <td>
@@ -303,6 +321,7 @@ function openAddServiceModal() {
   document.getElementById('serviceFormId').value = '';
   document.getElementById('serviceNameInput').value = '';
   document.getElementById('serviceCodeInput').value = '';
+  document.getElementById('serviceAccessCodeInput').value = 'MACE-OFFICE';
   document.getElementById('serviceDescInput').value = '';
   document.getElementById('serviceTimeInput').value = '5';
   document.getElementById('serviceStatusInput').value = 'ACTIVE';
@@ -318,6 +337,7 @@ function openEditServiceModal(id) {
   document.getElementById('serviceFormId').value = svc._id;
   document.getElementById('serviceNameInput').value = svc.serviceName;
   document.getElementById('serviceCodeInput').value = svc.code;
+  document.getElementById('serviceAccessCodeInput').value = svc.accessCode || '';
   document.getElementById('serviceDescInput').value = svc.description || '';
   document.getElementById('serviceTimeInput').value = svc.avgServiceTimeMinutes;
   document.getElementById('serviceStatusInput').value = svc.status;
@@ -331,6 +351,7 @@ async function handleSaveService(e) {
   const body = {
     serviceName: document.getElementById('serviceNameInput').value.trim(),
     code: document.getElementById('serviceCodeInput').value.trim(),
+    accessCode: document.getElementById('serviceAccessCodeInput').value.trim().toUpperCase(),
     description: document.getElementById('serviceDescInput').value.trim(),
     avgServiceTimeMinutes: Number(document.getElementById('serviceTimeInput').value),
     status: document.getElementById('serviceStatusInput').value,

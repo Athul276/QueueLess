@@ -17,7 +17,7 @@ const generateToken = (id) => {
 // @access  Public
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, confirmPassword, role } = req.body;
+    const { name, email, password, confirmPassword, role, officeAccessCode } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -51,12 +51,16 @@ exports.register = async (req, res) => {
 
     // Role defaults to user unless 'admin' explicitly passed
     const userRole = role === 'admin' ? 'admin' : 'user';
+    const code = userRole === 'admin' 
+      ? (officeAccessCode ? officeAccessCode.trim().toUpperCase() : 'MACE-OFFICE')
+      : '';
 
     const user = await User.create({
       name,
       email: email.toLowerCase(),
       password,
       role: userRole,
+      officeAccessCode: code,
     });
 
     const token = generateToken(user._id);
@@ -69,8 +73,11 @@ exports.register = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        officeAccessCode: user.officeAccessCode,
       },
-      message: 'Account created successfully!',
+      message: userRole === 'admin' 
+        ? `Admin account registered! Your College Office Queue Access Key is: ${user.officeAccessCode}. Students will use this key to access the queue.`
+        : 'Account created successfully!',
     });
   } catch (error) {
     console.error('Register error:', error);
@@ -122,6 +129,7 @@ exports.login = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        officeAccessCode: user.officeAccessCode,
       },
       message: `Welcome back, ${user.name}!`,
     });
@@ -147,6 +155,7 @@ exports.getMe = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        officeAccessCode: user.officeAccessCode,
       },
     });
   } catch (error) {
