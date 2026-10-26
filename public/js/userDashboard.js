@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     userNameElem.textContent = user.name;
   }
 
-  // Pre-fill remembered College Office Access Key
+  // Pre-fill remembered Access Key
   const savedKey = localStorage.getItem('queueless_access_key') || 'MACE-OFFICE';
   const keyInput = document.getElementById('userAccessKeyInput');
   if (keyInput) {
@@ -39,16 +39,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   }, 3000);
 });
 
-// Apply and remember Office Access Key
+// Apply and remember Queue Access Key
 function handleApplyAccessKey() {
   const input = document.getElementById('userAccessKeyInput');
   const key = input ? input.value.trim().toUpperCase() : '';
   if (!key) {
-    Auth.showToast('Please enter an Office Access Key (e.g. MACE-OFFICE)', 'warning');
+    Auth.showToast('Please enter the key for your code', 'warning');
     return;
   }
   localStorage.setItem('queueless_access_key', key);
-  Auth.showToast(`🔑 College Office Key "${key}" Applied! You can now join authorized office queues.`, 'success');
+  Auth.showToast(`🔑 Access Key "${key}" Applied! You can now join authorized queues.`, 'success');
 }
 
 // Load available services

@@ -31,7 +31,28 @@
         <p class="auth-subtitle">Sign in to manage your queue tokens</p>
       </div>
 
-      <form id="loginForm">
+        <!-- Role Selection Checker -->
+        <div class="form-group" style="margin-bottom: 1.25rem;">
+          <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Select Account Role</span>
+            <span id="roleBadgeIndicator" class="badge badge-waiting" style="font-size: 0.75rem;">Student / User</span>
+          </label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; background: var(--bg-sand); padding: 4px; border-radius: var(--radius-md); border: 1.5px solid var(--border); gap: 4px;">
+            <label style="margin: 0; cursor: pointer; text-align: center;">
+              <input type="radio" name="loginRole" value="user" checked style="display: none;" onchange="updateRoleToggleUI()">
+              <div id="roleBtnUser" style="padding: 0.65rem 0.5rem; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius-sm); transition: all 0.2s; background: var(--dark); color: #fff; display: flex; align-items: center; justify-content: center; gap: 0.35rem;">
+                <span>🎓</span> Student / User
+              </div>
+            </label>
+            <label style="margin: 0; cursor: pointer; text-align: center;">
+              <input type="radio" name="loginRole" value="admin" style="display: none;" onchange="updateRoleToggleUI()">
+              <div id="roleBtnAdmin" style="padding: 0.65rem 0.5rem; font-size: 0.88rem; font-weight: 700; border-radius: var(--radius-sm); transition: all 0.2s; background: transparent; color: var(--text-muted); display: flex; align-items: center; justify-content: center; gap: 0.35rem;">
+                <span>🛡️</span> Administrator
+              </div>
+            </label>
+          </div>
+        </div>
+
         <div class="form-group">
           <label class="form-label" for="loginEmail">Email Address</label>
           <input type="email" id="loginEmail" class="form-input" placeholder="e.g. athul@example.com" required>
@@ -56,6 +77,36 @@
 
   <script src="/js/auth.js"></script>
   <script>
+    function updateRoleToggleUI() {
+      const selected = document.querySelector('input[name="loginRole"]:checked').value;
+      const userBtn = document.getElementById('roleBtnUser');
+      const adminBtn = document.getElementById('roleBtnAdmin');
+      const badge = document.getElementById('roleBadgeIndicator');
+      const emailInput = document.getElementById('loginEmail');
+
+      if (selected === 'admin') {
+        adminBtn.style.background = 'var(--primary)';
+        adminBtn.style.color = '#fff';
+        userBtn.style.background = 'transparent';
+        userBtn.style.color = 'var(--text-muted)';
+        if (badge) {
+          badge.textContent = 'Administrator';
+          badge.className = 'badge badge-called';
+        }
+        if (emailInput && !emailInput.value) emailInput.placeholder = 'e.g. admin@example.com';
+      } else {
+        userBtn.style.background = 'var(--dark)';
+        userBtn.style.color = '#fff';
+        adminBtn.style.background = 'transparent';
+        adminBtn.style.color = 'var(--text-muted)';
+        if (badge) {
+          badge.textContent = 'Student / User';
+          badge.className = 'badge badge-waiting';
+        }
+        if (emailInput && !emailInput.value) emailInput.placeholder = 'e.g. athul@example.com';
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       // If already logged in, redirect
       if (Auth.isLoggedIn()) {
@@ -69,11 +120,12 @@
         e.preventDefault();
         const email = document.getElementById('loginEmail').value.trim();
         const password = document.getElementById('loginPassword').value;
-        await executeLogin(email, password);
+        const role = document.querySelector('input[name="loginRole"]:checked').value;
+        await executeLogin(email, password, role);
       });
     });
 
-    async function executeLogin(email, password) {
+    async function executeLogin(email, password, role) {
       const btn = document.getElementById('submitLoginBtn');
       btn.disabled = true;
       btn.innerHTML = `<span>Signing in...</span>`;
@@ -82,7 +134,7 @@
         const res = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ email, password, role }),
         });
 
         const data = await res.json();

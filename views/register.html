@@ -58,15 +58,15 @@
           <label class="form-label" for="regRole">Account Type</label>
           <select id="regRole" class="form-select" onchange="toggleAdminFields()">
             <option value="user" selected>Student / General User</option>
-            <option value="admin">Administrator (College Office / Desk Manager)</option>
+            <option value="admin">Administrator (Office / Desk Manager)</option>
           </select>
         </div>
 
-        <div id="adminOfficeKeyGroup" class="form-group" style="display: none; background: var(--bg-sand); padding: 1rem; border-radius: var(--radius-md); border: 1px dashed var(--primary);">
-          <label class="form-label" for="regOfficeCode">🔑 College Office Queue Key</label>
-          <input type="text" id="regOfficeCode" class="form-input" placeholder="e.g. MACE-OFFICE" style="text-transform: uppercase;">
+        <div id="adminOfficeKeyGroup" class="form-group" style="display: none; background: var(--bg-sand); padding: 1rem; border-radius: var(--radius-md); border: 1.5px dashed var(--primary);">
+          <label class="form-label" for="regOfficeCode">🔑 Queue Access Key / Code</label>
+          <input type="text" id="regOfficeCode" class="form-input" placeholder="e.g. OFFICE-KEY" style="text-transform: uppercase;">
           <small style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.35rem; display: block;">
-            Students will enter this key on their dashboard to access and enter your office's queue.
+            Visitors or students will enter this key on their dashboard to access and enter your queue.
           </small>
         </div>
 

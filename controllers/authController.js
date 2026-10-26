@@ -85,7 +85,7 @@ exports.register = async (req, res) => {
         officeAccessCode: user.officeAccessCode,
       },
       message: userRole === 'admin' 
-        ? `Admin account registered! Your College Office Queue Access Key is: ${user.officeAccessCode}. Students will use this key to access the queue.`
+        ? `Admin account registered! Your Queue Access Key is: ${user.officeAccessCode}. Share this key with visitors or students to access the queue.`
         : 'Account created successfully!',
     });
   } catch (error) {
@@ -102,7 +102,7 @@ exports.register = async (req, res) => {
 // @access  Public
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
@@ -125,6 +125,16 @@ exports.login = async (req, res) => {
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials. Incorrect password.',
+      });
+    }
+
+    // Role check: verify that user matches the selected role
+    if (role && user.role !== role) {
+      const chosenRoleTitle = role === 'admin' ? 'Administrator' : 'Student / User';
+      const actualRoleTitle = user.role === 'admin' ? 'Administrator' : 'Student / User';
+      return res.status(403).json({
+        success: false,
+        message: `Account role check: This email is registered as "${actualRoleTitle}", not "${chosenRoleTitle}". Please switch the role above to sign in.`,
       });
     }
 

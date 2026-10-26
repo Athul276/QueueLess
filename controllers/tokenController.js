@@ -37,7 +37,7 @@ exports.generateToken = async (req, res) => {
         return res.status(403).json({
           success: false,
           requireAccessCode: true,
-          message: `🔑 Authorization Required: Please enter the valid College Office Queue Access Key for "${service.serviceName}" to join this queue.`,
+          message: `🔑 Authorization Required: Please enter the valid key for your code to join "${service.serviceName}".`,
         });
       }
     }
