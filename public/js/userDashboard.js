@@ -170,14 +170,19 @@ async function loadUserTokens(isPolling = false) {
       const active = activeTokens[0]; // Primary active token
       currentActiveTokenId = active._id;
 
-      // 1. Notification: Approaching Turn (2 tokens or 1 token ahead)
-      if (active.status === 'WAITING' && active.position <= 2 && active.position > 0) {
+      // 1. Notification: Approaching Turn (Position 3, 2, or 1 in line)
+      if (active.status === 'WAITING' && active.position <= 3 && active.position > 0) {
         const alertKey = `${active._id}_pos_${active.position}`;
         if (!alertedApproachingTokens.has(alertKey)) {
           alertedApproachingTokens.add(alertKey);
           Auth.playChime();
 
-          if (active.position === 2) {
+          if (active.position === 3) {
+            Auth.showToast(`📢 Heads Up! You are in the 3rd position (${active.tokenNumber}). Your queue position is ready soon!`, 'info');
+            Auth.sendBrowserNotification('QueueLess: Your Queue Position is Ready Soon!', {
+              body: `You are in the 3rd position for ${active.service.serviceName} (Token ${active.tokenNumber}). Your queue position is ready soon — please stay nearby!`,
+            });
+          } else if (active.position === 2) {
             Auth.showToast(`⚠️ Heads Up! Only 2 tokens ahead of you (${active.tokenNumber}). Please start heading towards the counter.`, 'warning');
             Auth.sendBrowserNotification('QueueLess: Almost Your Turn!', {
               body: `Only 2 tokens ahead of you for ${active.service.serviceName} (Token ${active.tokenNumber}). Please proceed to the waiting area.`,
@@ -210,7 +215,17 @@ async function loadUserTokens(isPolling = false) {
       } else {
         statusBadge = `<span class="badge badge-waiting">⏳ IN QUEUE</span>`;
 
-        if (active.position === 2) {
+        if (active.position === 3) {
+          approachingNotice = `
+            <div style="background: #FFF8E6; border: 1.5px solid #FFD166; color: #9A6200; border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-top: 1rem; font-size: 0.88rem; font-weight: 700; display: flex; align-items: center; gap: 0.6rem; text-align: left;">
+              <span style="font-size: 1.3rem;">⏳</span>
+              <div>
+                <div style="font-size: 0.92rem; font-weight: 800; color: #805200;">Your Queue Position is Ready Soon!</div>
+                <div style="font-weight: 500; font-size: 0.82rem; color: #664100; margin-top: 0.15rem;">You are in the 3rd position (#3 in line). Please stay nearby and get ready.</div>
+              </div>
+            </div>
+          `;
+        } else if (active.position === 2) {
           approachingNotice = `
             <div style="background: #FFF0EB; border: 1px solid #FFBEA3; color: #D03D14; border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-top: 1rem; font-size: 0.88rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; text-align: left;">
               <span>⚡</span>
@@ -380,7 +395,19 @@ async function renderQueueTracker(userActiveToken) {
             const isServing = tok.status === 'CALLED';
 
             let tag = isServing ? 'NOW SERVING' : 'WAITING';
-            if (isMe) tag = isServing ? 'NOW SERVING (YOU)' : 'YOU';
+            if (isMe) {
+              if (isServing) {
+                tag = 'NOW SERVING (YOU)';
+              } else if (userActiveToken.position === 1) {
+                tag = 'YOU (#1 - NEXT)';
+              } else if (userActiveToken.position === 2) {
+                tag = 'YOU (#2 - ALMOST TURN)';
+              } else if (userActiveToken.position === 3) {
+                tag = 'YOU (#3 - READY SOON)';
+              } else {
+                tag = `YOU (#${userActiveToken.position})`;
+              }
+            }
 
             let itemClass = 'queue-item';
             if (isServing) itemClass += ' is-serving';
