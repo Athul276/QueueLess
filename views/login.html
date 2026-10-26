@@ -31,6 +31,7 @@
         <p class="auth-subtitle">Sign in to manage your queue tokens</p>
       </div>
 
+      <form id="loginForm" onsubmit="handleLoginSubmit(event)">
         <!-- Role Selection Checker -->
         <div class="form-group" style="margin-bottom: 1.25rem;">
           <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
@@ -78,7 +79,8 @@
   <script src="/js/auth.js"></script>
   <script>
     function updateRoleToggleUI() {
-      const selected = document.querySelector('input[name="loginRole"]:checked').value;
+      const selectedRadio = document.querySelector('input[name="loginRole"]:checked');
+      const selected = selectedRadio ? selectedRadio.value : 'user';
       const userBtn = document.getElementById('roleBtnUser');
       const adminBtn = document.getElementById('roleBtnAdmin');
       const badge = document.getElementById('roleBadgeIndicator');
@@ -114,21 +116,23 @@
         window.location.href = user && user.role === 'admin' ? '/admin-dashboard' : '/user-dashboard';
       }
       Auth.setupNavbar();
-
-      const form = document.getElementById('loginForm');
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('loginEmail').value.trim();
-        const password = document.getElementById('loginPassword').value;
-        const role = document.querySelector('input[name="loginRole"]:checked').value;
-        await executeLogin(email, password, role);
-      });
     });
+
+    async function handleLoginSubmit(e) {
+      if (e) e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const roleRadio = document.querySelector('input[name="loginRole"]:checked');
+      const role = roleRadio ? roleRadio.value : 'user';
+      await executeLogin(email, password, role);
+    }
 
     async function executeLogin(email, password, role) {
       const btn = document.getElementById('submitLoginBtn');
-      btn.disabled = true;
-      btn.innerHTML = `<span>Signing in...</span>`;
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span>Signing in...</span>`;
+      }
 
       try {
         const res = await fetch('/api/auth/login', {
@@ -142,22 +146,23 @@
         if (data.success) {
           Auth.setSession(data.token, data.user);
           Auth.showToast(data.message || 'Logged in successfully!', 'success');
+          const redirectUrl = (data.user && data.user.role === 'admin') ? '/admin-dashboard' : '/user-dashboard';
           setTimeout(() => {
-            if (data.user.role === 'admin') {
-              window.location.href = '/admin-dashboard';
-            } else {
-              window.location.href = '/user-dashboard';
-            }
-          }, 600);
+            window.location.href = redirectUrl;
+          }, 350);
         } else {
           Auth.showToast(data.message || 'Login failed', 'error');
-          btn.disabled = false;
-          btn.innerHTML = `<span>Sign In</span> <span class="pill-arrow">→</span>`;
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<span>Sign In</span> <span class="pill-arrow">→</span>`;
+          }
         }
       } catch (err) {
         Auth.showToast(err.message || 'Network error', 'error');
-        btn.disabled = false;
-        btn.innerHTML = `<span>Sign In</span> <span class="pill-arrow">→</span>`;
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `<span>Sign In</span> <span class="pill-arrow">→</span>`;
+        }
       }
     }
   </script>

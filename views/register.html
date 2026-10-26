@@ -31,7 +31,7 @@
         <p class="auth-subtitle">Join QueueLess to bypass physical waiting lines</p>
       </div>
 
-      <form id="registerForm">
+      <form id="registerForm" onsubmit="handleRegisterSubmit(event)">
         <div class="form-group">
           <label class="form-label" for="regName">Full Name</label>
           <input type="text" id="regName" class="form-input" placeholder="e.g. Athul M" required>
@@ -96,53 +96,59 @@
         window.location.href = user && user.role === 'admin' ? '/admin-dashboard' : '/user-dashboard';
       }
       Auth.setupNavbar();
+    });
 
-      const form = document.getElementById('registerForm');
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const name = document.getElementById('regName').value.trim();
-        const email = document.getElementById('regEmail').value.trim();
-        const password = document.getElementById('regPassword').value;
-        const confirmPassword = document.getElementById('regConfirmPassword').value;
-        const role = document.getElementById('regRole').value;
-        const officeAccessCode = document.getElementById('regOfficeCode') ? document.getElementById('regOfficeCode').value.trim() : '';
+    async function handleRegisterSubmit(e) {
+      if (e) e.preventDefault();
+      const name = document.getElementById('regName').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const password = document.getElementById('regPassword').value;
+      const confirmPassword = document.getElementById('regConfirmPassword').value;
+      const role = document.getElementById('regRole').value;
+      const officeAccessCode = document.getElementById('regOfficeCode') ? document.getElementById('regOfficeCode').value.trim() : '';
 
-        if (password !== confirmPassword) {
-          Auth.showToast('Passwords do not match', 'error');
-          return;
-        }
+      if (password !== confirmPassword) {
+        Auth.showToast('Passwords do not match', 'error');
+        return;
+      }
 
-        const btn = document.getElementById('submitRegBtn');
+      const btn = document.getElementById('submitRegBtn');
+      if (btn) {
         btn.disabled = true;
         btn.innerHTML = `<span>Creating account...</span>`;
+      }
 
-        try {
-          const res = await fetch('/api/auth/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, password, confirmPassword, role, officeAccessCode }),
-          });
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password, confirmPassword, role, officeAccessCode }),
+        });
 
-          const data = await res.json();
+        const data = await res.json();
 
-          if (data.success) {
-            Auth.setSession(data.token, data.user);
-            Auth.showToast(data.message || 'Account created successfully!', 'success');
-            setTimeout(() => {
-              window.location.href = data.user.role === 'admin' ? '/admin-dashboard' : '/user-dashboard';
-            }, 800);
-          } else {
-            Auth.showToast(data.message || 'Registration failed', 'error');
+        if (data.success) {
+          Auth.setSession(data.token, data.user);
+          Auth.showToast(data.message || 'Account created successfully!', 'success');
+          const redirectUrl = (data.user && data.user.role === 'admin') ? '/admin-dashboard' : '/user-dashboard';
+          setTimeout(() => {
+            window.location.href = redirectUrl;
+          }, 400);
+        } else {
+          Auth.showToast(data.message || 'Registration failed', 'error');
+          if (btn) {
             btn.disabled = false;
             btn.innerHTML = `<span>Complete Registration</span> <span class="pill-arrow">→</span>`;
           }
-        } catch (err) {
-          Auth.showToast(err.message || 'Network error', 'error');
+        }
+      } catch (err) {
+        Auth.showToast(err.message || 'Network error', 'error');
+        if (btn) {
           btn.disabled = false;
           btn.innerHTML = `<span>Complete Registration</span> <span class="pill-arrow">→</span>`;
         }
-      });
-    });
+      }
+    }
   </script>
 </body>
 </html>
